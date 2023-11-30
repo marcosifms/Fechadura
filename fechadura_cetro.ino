@@ -1,9 +1,15 @@
-#include <Keypad.h>
+#include <Keypad.h> //INCLUSÃO DE BIBLIOTECA
+#include <Ultrasonic.h>
+
+#define TRIGGER_PIN  12
+#define ECHO_PIN     11
+
+Ultrasonic ultrasonic(TRIGGER_PIN, ECHO_PIN);
 
 #include <Servo.h>
 
 Servo servo_Motor;
-char* password = "1234";
+String password = "1234";
 int position = 0;
 
 const byte ROWS = 4;
@@ -22,7 +28,9 @@ byte colPins[COLS] = { 5, 4, 3, 2 };
 Keypad keypad = Keypad (makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 const int ledvermelho = 12;
-const int ledverde = 11;
+const int ledverde = 13;
+
+bool abrir= false;
 
 void setup() {
   Serial.begin(9600);
@@ -36,6 +44,19 @@ void setup() {
 }
 
 void loop() {
+  float cmMsec;
+  long microsec = ultrasonic.timing();
+
+  cmMsec = ultrasonic.convert(microsec, Ultrasonic::CM);
+  Serial.print("dist:");
+  Serial.println(cmMsec);
+  if (cmMsec < 10) {
+   abrir = ! abrir;      
+     setLocked(abrir);
+   delay(1000);
+  }
+
+
 
   char key = keypad.getKey();
   Serial.println(key);
@@ -53,20 +74,22 @@ void loop() {
 
   }
   delay(100);
+
 }
 
 void setLocked(int locked) {
+  abrir = locked;
   if (locked) {
     digitalWrite(ledvermelho, HIGH);
     digitalWrite(ledverde, LOW);
     servo_Motor.write(0);
     Serial.println("Abriu");
-  }
-
-  else {
+  }  else {
     digitalWrite(ledverde, HIGH);
     digitalWrite(ledvermelho, LOW);
     servo_Motor.write(400);
-    Serial.println("Fechou");
-  }
+    Serial.println("fechou");
+    
+  }
+
 }
